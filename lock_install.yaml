@@ -1,0 +1,5 @@
+- name: Lock installation
+  hosts: all
+  user: root
+  roles:
+    - lock_dolibarr_install

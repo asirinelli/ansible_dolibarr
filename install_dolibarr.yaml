@@ -1,0 +1,5 @@
+- name: Install dolibarr
+  hosts: all
+  user: root
+  roles:
+    - install_dolibarr

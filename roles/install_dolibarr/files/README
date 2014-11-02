@@ -1,0 +1,6 @@
+# Certificates
+openssl genrsa -out dolibarr.key 4096
+openssl req -new -x509 -key dolibarr.key -out dolibarr.crt
+
+# backup ssh key
+ssh-keygen -f backup_key

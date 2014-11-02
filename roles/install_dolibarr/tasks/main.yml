@@ -1,0 +1,71 @@
+- name: Install required packages
+  apt: pkg={{ item }} state=latest update_cache=yes install_recommends=no
+  with_items:
+    - php5-fpm
+    - php5-mysql
+    - php5-mcrypt
+    - php5-intl
+    - php5-pspell
+    - php5-gd
+    - php5-cli
+    - nginx
+    - mysql-client
+    - mysql-server
+    - python-mysqldb
+
+- name: Create the database
+  mysql_db: name=dolibarr state=present
+
+- name: Create database user
+  mysql_user: name=dolibarr password=dolibarr priv=dolibarr.*:ALL
+
+- name: Create www directory
+  file: path=/var/www state=directory owner=root group=root
+
+- name: Download archive
+  get_url: url=http://sourceforge.net/projects/dolibarr/files/Dolibarr%20ERP-CRM/{{ dolibarr_version }}/dolibarr-{{ dolibarr_version }}.tgz/download dest=/root
+
+- name: Extract files
+  unarchive: src=/root/dolibarr-{{ dolibarr_version }}.tgz dest=/var/www copy=no
+
+- name: Set Permissions
+  file: path=/var/www/dolibarr-{{ dolibarr_version }} owner=root group=root recurse=yes
+
+- name: Create configuration file
+  file: path=/var/www/dolibarr-{{ dolibarr_version }}/htdocs/conf/conf.php owner=www-data group=www-data state=touch mode=0644
+
+- name: Create documents directory
+  file: path=/var/www/dolibarr-{{ dolibarr_version }}/documents owner=www-data group=www-data state=directory recurse=yes
+
+- name: Copy SSL certificate and key
+  copy: src={{ item }} dest=/etc/nginx/certs/ mode=600
+  with_items:
+    - dolibarr.crt
+    - dolibarr.key
+
+- name: Upload nginx config file
+  notify: restart nginx
+  template: src=dolibarr.nginx dest=/etc/nginx/sites-enabled owner=root group=root
+
+- name: Upload php-fpm config file
+  copy: src=dolibarr-fpm.conf dest=/etc/php5/fpm/pool.d/dolibarr.conf
+  notify: restart fpm
+
+- name: remove default fpm config file
+  file: path=/etc/php5/fpm/pool.d/www.conf state=absent
+  notify: restart fpm
+
+- name: Install backup script
+  template: src=backup_dolibarr.sh dest=/root mode=700 owner=root group=root
+
+- name: Install ssh key for backup
+  copy: src=backup_key dest=/root/.ssh/ mode=600
+
+- name: Set crontab
+  cron: name="backup_dolibarr" special_time=daily job="/root/backup_dolibarr.sh"
+
+- name: Start fpm
+  service: name=php5-fpm state=started enabled=yes
+
+- name: Start nginx
+  service: name=nginx state=started enabled=yes

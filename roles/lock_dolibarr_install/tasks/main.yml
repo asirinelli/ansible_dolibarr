@@ -1,0 +1,2 @@
+- name: Lock dolibarr install
+  file: path=/var/www/dolibarr-{{ dolibarr_version }}/documents/install.lock state=touch owner=root group=root

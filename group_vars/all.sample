@@ -1,0 +1,7 @@
+dolibarr_version: 3.6.1
+
+dolibarr_fqdn: dolibarr.example.com
+
+backup_password: MyBackupPassword
+
+backup_destination: 'me@backup.example.com:dolibarr/'
